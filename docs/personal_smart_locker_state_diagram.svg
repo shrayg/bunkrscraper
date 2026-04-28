@@ -1,0 +1,243 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3200" height="2100" viewBox="0 0 3200 2100">
+  <defs>
+    <style>
+      .title { font: 700 54px 'Arial', sans-serif; fill: #111; }
+      .subtitle { font: 400 24px 'Arial', sans-serif; fill: #333; }
+      .section { font: 700 32px 'Arial', sans-serif; fill: #111; }
+      .state { fill: #f7fbff; stroke: #1f4b99; stroke-width: 4; rx: 18; ry: 18; }
+      .io { fill: #f8fff7; stroke: #2e7d32; stroke-width: 4; rx: 18; ry: 18; }
+      .alert { fill: #fff7f7; stroke: #a32626; stroke-width: 4; rx: 18; ry: 18; }
+      .aux { fill: #fffef3; stroke: #9a7b00; stroke-width: 4; rx: 18; ry: 18; }
+      .event { font: 600 20px 'Arial', sans-serif; fill: #111; }
+      .body { font: 500 19px 'Arial', sans-serif; fill: #111; }
+      .small { font: 500 17px 'Arial', sans-serif; fill: #111; }
+      .lane { fill: none; stroke: #d0d7de; stroke-width: 3; stroke-dasharray: 12 10; }
+      .arrow { fill: none; stroke: #23395d; stroke-width: 4; marker-end: url(#arrowhead); }
+      .arrow-green { fill: none; stroke: #2e7d32; stroke-width: 4; marker-end: url(#arrowheadGreen); }
+      .arrow-red { fill: none; stroke: #a32626; stroke-width: 4; marker-end: url(#arrowheadRed); }
+      .arrow-gold { fill: none; stroke: #9a7b00; stroke-width: 4; marker-end: url(#arrowheadGold); }
+      .note { fill: #f5f5f5; stroke: #888; stroke-width: 2.5; rx: 14; ry: 14; }
+    </style>
+
+    <marker id="arrowhead" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <polygon points="0 0, 14 5, 0 10" fill="#23395d" />
+    </marker>
+    <marker id="arrowheadGreen" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <polygon points="0 0, 14 5, 0 10" fill="#2e7d32" />
+    </marker>
+    <marker id="arrowheadRed" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <polygon points="0 0, 14 5, 0 10" fill="#a32626" />
+    </marker>
+    <marker id="arrowheadGold" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto">
+      <polygon points="0 0, 14 5, 0 10" fill="#9a7b00" />
+    </marker>
+  </defs>
+
+  <text x="80" y="90" class="title">Personal Smart Locker - Comprehensive Firmware State Diagram</text>
+  <text x="80" y="135" class="subtitle">Covers LockState, servo motion, save-mode flow, sleep/wake behavior, battery pre-sleep alert, and LED event overlays.</text>
+
+  <!-- Main lock state machine boundary -->
+  <rect x="60" y="180" width="1980" height="1220" class="lane"/>
+  <text x="90" y="225" class="section">A) Main LockState + Password / Servo Flow</text>
+
+  <!-- Main states -->
+  <rect x="130" y="330" width="360" height="180" class="state"/>
+  <text x="160" y="385" class="event">STATE_LOCKED</text>
+  <text x="160" y="425" class="body">- Red LED (if UI visible)</text>
+  <text x="160" y="455" class="body">- Accept keypad digits / # / *</text>
+
+  <rect x="730" y="330" width="400" height="180" class="state"/>
+  <text x="760" y="385" class="event">STATE_UNLOCKING</text>
+  <text x="760" y="425" class="body">- Servo powered + attached</text>
+  <text x="760" y="455" class="body">- Monitored for block / timeout</text>
+
+  <rect x="1370" y="330" width="360" height="180" class="state"/>
+  <text x="1400" y="385" class="event">STATE_UNLOCKED</text>
+  <text x="1400" y="425" class="body">- Green LED (if UI visible)</text>
+  <text x="1400" y="455" class="body">- * starts lock, #x5 enters save</text>
+
+  <rect x="730" y="700" width="400" height="180" class="state"/>
+  <text x="760" y="755" class="event">STATE_LOCKING</text>
+  <text x="760" y="795" class="body">- Servo powered + attached</text>
+  <text x="760" y="825" class="body">- Monitored for block / timeout</text>
+
+  <rect x="1370" y="700" width="470" height="230" class="aux"/>
+  <text x="1400" y="755" class="event">STATE_SAVE_PASSWORD</text>
+  <text x="1400" y="795" class="body">- Yellow blink</text>
+  <text x="1400" y="825" class="body">- Collect 4 numeric digits</text>
+  <text x="1400" y="855" class="body">- '#' with 4 digits =&gt; save hash</text>
+  <text x="1400" y="885" class="body">- '*' =&gt; cancel (return to caller state)</text>
+
+  <rect x="130" y="1050" width="500" height="260" class="io"/>
+  <text x="160" y="1105" class="event">Keypad Input Handling (when not moving servo)</text>
+  <text x="160" y="1140" class="small">Digits in LOCKED: buffer up to 4.</text>
+  <text x="160" y="1170" class="small">'#' with 4 digits: verify password.</text>
+  <text x="160" y="1200" class="small">Wrong password: clear + LED_EVENT_WRONG.</text>
+  <text x="160" y="1230" class="small">Empty/short '#': counts toward 5x '#'.</text>
+  <text x="160" y="1260" class="small">At 5x '#': enter save mode (from LOCKED).</text>
+
+  <rect x="730" y="1050" width="610" height="260" class="io"/>
+  <text x="760" y="1105" class="event">Serial Command Handling (when awake)</text>
+  <text x="760" y="1140" class="small">S code: save salted SHA-256 hash</text>
+  <text x="760" y="1170" class="small">T code: test password</text>
+  <text x="760" y="1200" class="small">L/U/R: lock/unlock/reset pulse</text>
+  <text x="760" y="1230" class="small">B/P/A/X/Z/M: rail, buzzer, awake hold, cycle tests, timing</text>
+
+  <!-- Main arrows -->
+  <path d="M 490 420 L 730 420" class="arrow"/>
+  <text x="530" y="395" class="small">passwordMatches() OR Serial U</text>
+  <text x="530" y="445" class="small">startServoMotion(..., STATE_UNLOCKING)</text>
+
+  <path d="M 1130 420 L 1370 420" class="arrow-green"/>
+  <text x="1160" y="395" class="small">MOVE_TIMEOUT_MS without block</text>
+
+  <path d="M 1370 470 C 1180 560, 980 585, 830 700" class="arrow"/>
+  <text x="1040" y="620" class="small">'*' from UNLOCKED OR Serial L</text>
+
+  <path d="M 930 700 L 930 510" class="arrow-green"/>
+  <path d="M 930 510 L 1370 510" class="arrow-green"/>
+  <path d="M 1370 510 L 1370 420" class="arrow-green"/>
+  <text x="955" y="540" class="small">LOCKING success =&gt; STATE_LOCKED</text>
+
+  <path d="M 730 420 C 600 550, 500 580, 370 510" class="arrow-red"/>
+  <text x="480" y="540" class="small">blocked current &gt;= threshold</text>
+  <text x="480" y="568" class="small">for BLOCK_CONFIRM_MS</text>
+
+  <path d="M 730 790 C 590 930, 430 890, 310 510" class="arrow-red"/>
+  <text x="450" y="900" class="small">blocked while locking =&gt; revert to prev state</text>
+
+  <path d="M 1730 420 L 1730 700" class="arrow-gold"/>
+  <text x="1750" y="560" class="small">UNLOCKED + '#' x5</text>
+
+  <path d="M 1370 815 L 1130 815" class="arrow-gold"/>
+  <path d="M 1130 815 L 1130 420" class="arrow-gold"/>
+  <path d="M 1130 420 L 1370 420" class="arrow-gold"/>
+  <text x="1150" y="690" class="small">save success / cancel with returnState=UNLOCKED</text>
+
+  <path d="M 1600 930 L 1600 1010" class="arrow-gold"/>
+  <path d="M 1600 1010 L 310 1010" class="arrow-gold"/>
+  <path d="M 310 1010 L 310 510" class="arrow-gold"/>
+  <text x="760" y="995" class="small">save-mode entered from LOCKED returns to LOCKED</text>
+
+  <path d="M 390 1050 L 390 510" class="arrow"/>
+  <text x="410" y="760" class="small">Keypad validate loop acts on LOCKED</text>
+
+  <path d="M 1040 1050 L 1040 880" class="arrow"/>
+  <path d="M 1040 880 L 930 880" class="arrow"/>
+  <text x="1060" y="945" class="small">Serial L/U may trigger motion states</text>
+
+  <!-- Sleep/Wake state machine -->
+  <rect x="2080" y="180" width="1060" height="930" class="lane"/>
+  <text x="2110" y="225" class="section">B) Sleep / Wake + Pre-Sleep Battery Alert</text>
+
+  <rect x="2160" y="320" width="400" height="170" class="state"/>
+  <text x="2190" y="375" class="event">AWAKE_ACTIVE</text>
+  <text x="2190" y="410" class="body">Normal loop runs</text>
+  <text x="2190" y="440" class="body">markActivity() resets idle timer</text>
+
+  <rect x="2710" y="320" width="360" height="170" class="alert"/>
+  <text x="2740" y="375" class="event">PRE_SLEEP_RAIL_CHECK</text>
+  <text x="2740" y="410" class="body">Measure AVcc</text>
+  <text x="2740" y="440" class="body">Compare against warn/crit</text>
+
+  <rect x="2710" y="570" width="360" height="210" class="alert"/>
+  <text x="2740" y="625" class="event">ALERT_BURST_3S</text>
+  <text x="2740" y="660" class="body">If low and not played:</text>
+  <text x="2740" y="690" class="body">- stop servo</text>
+  <text x="2740" y="720" class="body">- buzzer + red/yellow LED pattern</text>
+  <text x="2740" y="750" class="body">- set preSleepAlertPlayed=true</text>
+
+  <rect x="2160" y="790" width="400" height="220" class="state"/>
+  <text x="2190" y="845" class="event">POWER_DOWN_SLEEP</text>
+  <text x="2190" y="880" class="body">Columns low for wake</text>
+  <text x="2190" y="910" class="body">A0 PCINT + optional WDT enabled</text>
+  <text x="2190" y="940" class="body">LEDs off, ADC off, sleep instruction</text>
+  <text x="2190" y="970" class="body">Wake =&gt; restore peripherals</text>
+
+  <path d="M 2560 405 L 2710 405" class="arrow"/>
+  <text x="2575" y="380" class="small">idle timeout reached</text>
+
+  <path d="M 2890 490 L 2890 570" class="arrow-red"/>
+  <text x="2910" y="545" class="small">rail low &amp; not already alerted</text>
+
+  <path d="M 2710 405 L 2560 405" class="arrow-green"/>
+  <text x="2580" y="435" class="small">rail OK (or in hysteresis) =&gt; continue sleep entry</text>
+
+  <path d="M 2710 690 L 2500 690" class="arrow-red"/>
+  <path d="M 2500 690 L 2500 790" class="arrow-red"/>
+  <text x="2520" y="742" class="small">after fixed 3 s burst</text>
+
+  <path d="M 2710 405 L 2360 405" class="arrow"/>
+  <path d="M 2360 405 L 2360 790" class="arrow"/>
+  <text x="2380" y="620" class="small">sleep setup path (no alert needed)</text>
+
+  <path d="M 2160 900 L 2020 900" class="arrow-green"/>
+  <path d="M 2020 900 L 2020 405" class="arrow-green"/>
+  <path d="M 2020 405 L 2160 405" class="arrow-green"/>
+  <text x="1730" y="650" class="small">wake by keypad (PCINT) or WDT</text>
+
+  <!-- LED event overlay -->
+  <rect x="2080" y="1160" width="1060" height="780" class="lane"/>
+  <text x="2110" y="1205" class="section">C) LED Event Overlay (runLeds)</text>
+
+  <rect x="2160" y="1290" width="360" height="150" class="state"/>
+  <text x="2190" y="1345" class="event">LED_EVENT_NONE</text>
+  <text x="2190" y="1380" class="body">Show base state LEDs</text>
+
+  <rect x="2640" y="1260" width="430" height="130" class="aux"/>
+  <text x="2670" y="1310" class="event">LED_EVENT_WRONG</text>
+  <text x="2670" y="1340" class="body">Blink red for ~900 ms</text>
+
+  <rect x="2640" y="1420" width="430" height="130" class="aux"/>
+  <text x="2670" y="1470" class="event">LED_EVENT_BLOCKED</text>
+  <text x="2670" y="1500" class="body">Blink red+yellow for ~1000 ms</text>
+
+  <rect x="2640" y="1580" width="430" height="130" class="aux"/>
+  <text x="2670" y="1630" class="event">LED_EVENT_SAVED</text>
+  <text x="2670" y="1660" class="body">Blink yellow for ~900 ms</text>
+
+  <rect x="2640" y="1740" width="430" height="130" class="aux"/>
+  <text x="2670" y="1790" class="event">LED_EVENT_WAKE</text>
+  <text x="2670" y="1820" class="body">Blink green for ~500 ms</text>
+
+  <rect x="2160" y="1500" width="360" height="190" class="alert"/>
+  <text x="2190" y="1555" class="event">BATTERY_ALERT_ACTIVE</text>
+  <text x="2190" y="1590" class="body">LED tracks buzzerToneOn</text>
+  <text x="2190" y="1620" class="body">Critical: red pulse</text>
+  <text x="2190" y="1650" class="body">Warning: yellow pulse</text>
+
+  <path d="M 2520 1365 L 2640 1325" class="arrow"/>
+  <text x="2535" y="1328" class="small">wrong password</text>
+  <path d="M 2520 1365 L 2640 1485" class="arrow"/>
+  <text x="2535" y="1460" class="small">blocked motor</text>
+  <path d="M 2520 1365 L 2640 1645" class="arrow"/>
+  <text x="2535" y="1600" class="small">password saved</text>
+  <path d="M 2520 1365 L 2640 1805" class="arrow"/>
+  <text x="2535" y="1745" class="small">wake feedback</text>
+
+  <path d="M 2640 1325 L 2520 1365" class="arrow-gold"/>
+  <path d="M 2640 1485 L 2520 1365" class="arrow-gold"/>
+  <path d="M 2640 1645 L 2520 1365" class="arrow-gold"/>
+  <path d="M 2640 1805 L 2520 1365" class="arrow-gold"/>
+  <text x="2360" y="1845" class="small">Each temporary event auto-expires back to NONE</text>
+
+  <path d="M 2520 1365 L 2520 1595" class="arrow-red"/>
+  <text x="2540" y="1485" class="small">if batteryAlertActive()</text>
+  <path d="M 2340 1500 L 2340 1365" class="arrow-red"/>
+  <path d="M 2340 1365 L 2160 1365" class="arrow-red"/>
+  <text x="2170" y="1470" class="small">when burst ends</text>
+
+  <!-- Legend -->
+  <rect x="80" y="1450" width="1880" height="490" class="note"/>
+  <text x="120" y="1510" class="section">Legend + Transition Conditions (from firmware)</text>
+  <text x="120" y="1560" class="body">• Main LockState values: LOCKED, UNLOCKED, SAVE_PASSWORD, LOCKING, UNLOCKING.</text>
+  <text x="120" y="1595" class="body">• LOCKING/UNLOCKING are transient servo-motion states serviced by serviceServoMotion().</text>
+  <text x="120" y="1630" class="body">• Block detection: current >= BLOCK_ADC_THRESHOLD after MOVE_GRACE_MS for BLOCK_CONFIRM_MS.</text>
+  <text x="120" y="1665" class="body">• Success completion: movement reaches MOVE_TIMEOUT_MS, then next stable lock state is committed.</text>
+  <text x="120" y="1700" class="body">• Save mode entry: five '#' presses from UNLOCKED OR five empty/invalid '#' sequences from LOCKED.</text>
+  <text x="120" y="1735" class="body">• Sleep gate: idle time elapsed, not within stay-awake window, and not in servo-motion state.</text>
+  <text x="120" y="1770" class="body">• Pre-sleep battery check runs once per sleep attempt; low rail triggers 3 s alert burst before sleeping.</text>
+  <text x="120" y="1805" class="body">• Wake sources: keypad A0 pin-change (PCINT1) and optional watchdog interrupt (WDT).</text>
+  <text x="120" y="1840" class="body">• LED event overlays preempt base LED display until their timer expires.</text>
+
+</svg>
